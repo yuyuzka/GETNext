@@ -42,9 +42,9 @@ class GraphConvolution(nn.Module):
         super(GraphConvolution, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = Parameter(torch.FloatTensor(in_features, out_features))
+        self.weight = Parameter(torch.FloatTensor(in_features, out_features).to("cuda:0"))
         if bias:
-            self.bias = Parameter(torch.FloatTensor(out_features))
+            self.bias = Parameter(torch.FloatTensor(out_features).cuda())
         else:
             self.register_parameter('bias', None)
         self.reset_parameters()
@@ -77,6 +77,7 @@ class GCN(nn.Module):
         self.dropout = dropout
         self.leaky_relu = nn.LeakyReLU(0.2)
 
+        # [316,32,64,128]
         channels = [ninput] + nhid + [noutput]
         for i in range(len(channels) - 1):
             gcn_layer = GraphConvolution(channels[i], channels[i + 1])
@@ -216,10 +217,6 @@ class TransformerModel(nn.Module):
         self.decoder_cat = nn.Linear(embed_size, num_cat)
         self.init_weights()
 
-    def generate_square_subsequent_mask(self, sz):
-        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
-        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
-        return mask
 
     def init_weights(self):
         initrange = 0.1

@@ -6,12 +6,14 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from scipy.sparse import coo_array
 
 
 def build_global_POI_checkin_graph(df, exclude_user=None):
     G = nx.DiGraph()
     users = list(set(df['user_id'].to_list()))
-    if exclude_user in users: users.remove(exclude_user)
+    if exclude_user in users:
+        users.remove(exclude_user)
     loop = tqdm(users)
     for user_id in loop:
         user_df = df[df['user_id'] == user_id]
@@ -36,6 +38,7 @@ def build_global_POI_checkin_graph(df, exclude_user=None):
         for i, row in user_df.iterrows():
             poi_id = row['POI_id']
             traj_id = row['trajectory_id']
+            # 需要在同一条轨迹
             # No edge for the begin of the seq or different traj
             if (previous_poi_id == 0) or (previous_traj_id != traj_id):
                 previous_poi_id = poi_id
@@ -62,7 +65,8 @@ def save_graph_to_csv(G, dst_dir):
     nodelist = G.nodes()
     A = nx.adjacency_matrix(G, nodelist=nodelist)
     # np.save(os.path.join(dst_dir, 'adj_mtx.npy'), A.todense())
-    np.savetxt(os.path.join(dst_dir, 'graph_A.csv'), A.todense(), delimiter=',')
+    np.savetxt(os.path.join(dst_dir, 'graph_A.csv'),
+               A.todense(), delimiter=',')
 
     # Save nodes list
     nodes_data = list(G.nodes.data())  # [(node_name, {attr1, attr2}),...]
@@ -84,6 +88,9 @@ def save_graph_to_csv(G, dst_dir):
 def save_graph_to_pickle(G, dst_dir):
     pickle.dump(G, open(os.path.join(dst_dir, 'graph.pkl'), 'wb'))
 
+# node_id2idx poiID（32位） 转换为idx 0开头
+# edgelist srcIdx起始Id  dstIdx目的ID weight权重
+
 
 def save_graph_edgelist(G, dst_dir):
     nodelist = G.nodes()
@@ -96,7 +103,8 @@ def save_graph_edgelist(G, dst_dir):
     with open(os.path.join(dst_dir, 'graph_edge.edgelist'), 'w') as f:
         for edge in nx.generate_edgelist(G, data=['weight']):
             src_node, dst_node, weight = edge.split(' ')
-            print(f'{node_id2idx[src_node]} {node_id2idx[dst_node]} {weight}', file=f)
+            print(
+                f'{node_id2idx[src_node]} {node_id2idx[dst_node]} {weight}', file=f)
 
 
 def load_graph_adj_mtx(path):
@@ -123,7 +131,8 @@ def print_graph_statisics(G):
     node_degrees = [each[1] for each in G.degree]
     print(f"Node degree (mean): {np.mean(node_degrees):.2f}")
     for i in range(0, 101, 20):
-        print(f"Node degree ({i} percentile): {np.percentile(node_degrees, i)}")
+        print(
+            f"Node degree ({i} percentile): {np.percentile(node_degrees, i)}")
 
     # Edge weights (mean and percentiles)
     edge_weights = []
@@ -133,7 +142,8 @@ def print_graph_statisics(G):
             edge_weights.append(weight)
     print(f"Edge frequency (mean): {np.mean(edge_weights):.2f}")
     for i in range(0, 101, 20):
-        print(f"Edge frequency ({i} percentile): {np.percentile(edge_weights, i)}")
+        print(
+            f"Edge frequency ({i} percentile): {np.percentile(edge_weights, i)}")
 
 
 if __name__ == '__main__':
@@ -146,5 +156,6 @@ if __name__ == '__main__':
 
     # Save graph to disk
     save_graph_to_pickle(G, dst_dir=dst_dir)
+    # 图的连接矩阵
     save_graph_to_csv(G, dst_dir=dst_dir)
     save_graph_edgelist(G, dst_dir=dst_dir)

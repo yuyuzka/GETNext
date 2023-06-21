@@ -1,3 +1,4 @@
+import enum
 import glob
 import math
 import os
@@ -170,3 +171,15 @@ def MRR_metric_last_timestep(y_true_seq, y_pred_seq):
 def array_round(x, k=4):
     # For a list of float values, keep k decimals of each element
     return list(np.around(np.array(x), k))
+
+# Support for 3 different GAT implementations - we'll profile each one of these in playground.py
+class LayerType(enum.Enum):
+    IMP1 = 0,
+    IMP2 = 1,
+    IMP3 = 2
+
+
+def generate_square_subsequent_mask(sz):
+    mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
+    mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+    return mask

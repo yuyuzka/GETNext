@@ -4,7 +4,7 @@ import argparse
 import torch
 
 if torch.cuda.is_available():
-    device = torch.device('cuda')
+    device = torch.device('cuda:0')
 else:
     device = torch.device('cpu')
 
@@ -154,5 +154,9 @@ def parameter_parser():
                         type=int,
                         default=64973,
                         help='python console use only')
+    parser.add_argument('--origin_file',
+                        type=str,
+                        default="./dataset/NYC/dataset_NYC",
+                        help="文件名前缀")
 
     return parser.parse_args()
