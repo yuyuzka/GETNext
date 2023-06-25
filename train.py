@@ -245,10 +245,10 @@ def train(args):
     #                       noutput=args.poi_embed_dim,
     #                       dropout=args.gcn_dropout)
 
-    poi_GAT_model = GAT(num_of_layers=2, num_heads_per_layer=[8,1], num_features_per_layer=[node_feature,128,args.poi_embed_dim])
+    poi_GAT_model = GAT(num_of_layers=2, num_heads_per_layer=[4,4], num_features_per_layer=[node_feature,128,args.poi_embed_dim])
 
     # Node Attn Model
-    node_attn_model = NodeAttnMap(in_features=node_feature, nhid=args.node_attn_nhid, use_mask=False)
+    # node_attn_model = NodeAttnMap(in_features=node_feature, nhid=args.node_attn_nhid, use_mask=False)
 
     # %% Model2: User embedding model, nn.embedding
     user_embed_model = UserEmbeddings(user_nums, args.user_embed_dim)
@@ -275,7 +275,7 @@ def train(args):
 
     # Define overall loss and optimizer
     optimizer = optim.Adam(params=list(poi_GAT_model.parameters()) +
-                                  list(node_attn_model.parameters()) +
+                                  # list(node_attn_model.parameters()) +
                                   list(user_embed_model.parameters()) +
                                   list(time_embed_model.parameters()) +
                                   list(cat_embed_model.parameters()) +
@@ -349,7 +349,7 @@ def train(args):
     # %% ====================== Train ======================
     poi_GAT_model = poi_GAT_model.to(device = args.device)
     # poi_embed_model = poi_embed_model.to(device=args.device)
-    node_attn_model = node_attn_model.to(device=args.device)
+    # node_attn_model = node_attn_model.to(device=args.device)
     user_embed_model = user_embed_model.to(device=args.device)
     time_embed_model = time_embed_model.to(device=args.device)
     cat_embed_model = cat_embed_model.to(device=args.device)
@@ -386,7 +386,7 @@ def train(args):
         logging.info(f"{'*' * 50}Epoch:{epoch:03d}{'*' * 50}\n")
         # poi_embed_model.train()
         poi_GAT_model.train()
-        node_attn_model.train()
+        # node_attn_model.train()
         user_embed_model.train()
         time_embed_model.train()
         cat_embed_model.train()
@@ -527,7 +527,7 @@ def train(args):
         # train end --------------------------------------------------------------------------------------------------------
         # poi_embed_model.eval()
         poi_GAT_model.eval()
-        node_attn_model.eval()
+        # node_attn_model.eval()
         user_embed_model.eval()
         time_embed_model.eval()
         cat_embed_model.eval()
@@ -769,7 +769,7 @@ def train(args):
             state_dict = {
                 'epoch': epoch,
                 'poi_GAT_model_state_dict': poi_GAT_model.state_dict(),
-                'node_attn_state_dict': node_attn_model.state_dict(),
+                # 'node_attn_state_dict': node_attn_model.state_dict(),
                 'user_embed_state_dict': user_embed_model.state_dict(),
                 'time_embed_state_dict': time_embed_model.state_dict(),
                 'cat_embed_state_dict': cat_embed_model.state_dict(),
