@@ -431,8 +431,8 @@ def train(args):
             y_pred_poi, y_pred_time, y_pred_cat = seq_model(x, src_mask)
 
             # Graph Attention adjusted prob
-            y_pred_poi_adjusted = adjust_pred_prob_by_graph(y_pred_poi)
-
+            # y_pred_poi_adjusted = adjust_pred_prob_by_graph(y_pred_poi)
+            y_pred_poi_adjusted = y_pred_poi
             loss_poi = criterion_poi(y_pred_poi_adjusted.transpose(1, 2), y_poi)
             loss_time = criterion_time(torch.squeeze(y_pred_time), y_time)
             loss_cat = criterion_cat(y_pred_cat.transpose(1, 2), y_cat)
@@ -565,7 +565,8 @@ def train(args):
             y_pred_poi, y_pred_time, y_pred_cat = seq_model(x, src_mask)
 
             # Graph Attention adjusted prob
-            y_pred_poi_adjusted = adjust_pred_prob_by_graph(y_pred_poi)
+            # y_pred_poi_adjusted = adjust_pred_prob_by_graph(y_pred_poi)
+            y_pred_poi_adjusted = y_pred_poi
 
             # Calculate loss
             loss_poi = criterion_poi(y_pred_poi_adjusted.transpose(1, 2), y_poi)
