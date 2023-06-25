@@ -245,7 +245,7 @@ def train(args):
     #                       noutput=args.poi_embed_dim,
     #                       dropout=args.gcn_dropout)
 
-    poi_GAT_model = GAT(num_of_layers=2, num_heads_per_layer=[8,1], num_features_per_layer=[node_feature,8,args.poi_embed_dim])
+    poi_GAT_model = GAT(num_of_layers=2, num_heads_per_layer=[8,1], num_features_per_layer=[node_feature,128,args.poi_embed_dim])
 
     # Node Attn Model
     node_attn_model = NodeAttnMap(in_features=node_feature, nhid=args.node_attn_nhid, use_mask=False)
@@ -498,7 +498,7 @@ def train(args):
             train_batches_cat_loss_list.append(loss_cat.detach().cpu().numpy())
 
             # Report training progress
-            if (b_idx % (args.batch * 5)) == 0:
+            if (b_idx % (args.batch * 100)) == 0:
                 sample_idx = 0
                 batch_pred_pois_wo_attn = y_pred_poi.detach().cpu().numpy()
                 logging.info(f'Epoch:{epoch}, batch:{b_idx}, '
