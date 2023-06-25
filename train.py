@@ -540,7 +540,7 @@ def train(args):
         src_mask = generate_square_subsequent_mask(args.batch).to(args.device)
         for vb_idx, batch in enumerate(val_loader):
             if len(batch) != args.batch:
-                src_mask = seq_model.generate_square_subsequent_mask(len(batch)).to(args.device)
+                src_mask = generate_square_subsequent_mask(len(batch)).to(args.device)
 
             # For padding
             batch_input_seqs = []
