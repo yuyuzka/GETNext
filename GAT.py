@@ -17,7 +17,7 @@ class GAT(torch.nn.Module):
 
     """
 
-    def __init__(self, num_of_layers, num_heads_per_layer, num_features_per_layer, add_skip_connection=True, bias=True,
+    def __init__(self, num_of_layers, num_heads_per_layer, num_features_per_layer, add_skip_connection=False, bias=True,
                  dropout=0.6, layer_type=LayerType.IMP3, log_attention_weights=False):
         super().__init__()
         assert num_of_layers == len(num_heads_per_layer) == len(num_features_per_layer) - 1, f'Enter valid arch params.'
@@ -56,7 +56,6 @@ class GATLayer(torch.nn.Module):
 
     """
 
-    head_dim = 1
 
     def __init__(self, num_in_features, num_out_features, num_of_heads, layer_type, concat=True, activation=nn.ELU(),
                  dropout_prob=0.6, add_skip_connection=True, bias=True, log_attention_weights=False):
