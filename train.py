@@ -24,7 +24,7 @@ from utils import increment_path, calculate_laplacian_matrix, zipdir, top_k_acc_
     mAP_metric_last_timestep, MRR_metric_last_timestep, maksed_mse_loss
 import GETNext
 from utils import *
-
+from GAT import GAT
 
 
 def train(args):
@@ -61,69 +61,72 @@ def train(args):
     train_df = pd.read_csv(args.data_train)
     val_df = pd.read_csv(args.data_val)
 
+    pois_df = pd.read_pickle(args.origin_file + "_pois.data")
+    pois2id_dict = pd.read_pickle(args.origin_file + "_pois2id.data")
+
+    cats2id_dict = pd.read_pickle(args.origin_file + "_cats2id.data")
+
+    user2id_dict = pd.read_pickle(args.origin_file + "_users2id.data")
+
+    adj_list = pd.read_pickle(args.origin_file + "_adj_K=30.data")
+
+    adj = pd.read_pickle(args.origin_file + "_adj_K=30.data")
+    node_features = pd.read_pickle(args.origin_file + "_pois.data")
+    node_labels = [item[0] for item in node_features]
+    node_features = torch.tensor(node_features,dtype=torch.float,device=args.device)
+    adj = torch.tensor(list(adj),dtype=torch.int64,device=args.device).transpose(0,1)
+
+
+    graph_data = (node_features, adj)
+
     # Build POI graph (built from train_df)
     print('Loading POI graph...')
-    raw_A = load_graph_adj_mtx(args.data_adj_mtx)
-    raw_X = load_graph_node_features(args.data_node_feats,
-                                     args.feature1,
-                                     args.feature2,
-                                     args.feature3,
-                                     args.feature4)
-    logging.info(
-        f"raw_X.shape: {raw_X.shape}; "
-        f"Four features: {args.feature1}, {args.feature2}, {args.feature3}, {args.feature4}.")
-    logging.info(f"raw_A.shape: {raw_A.shape}; Edge from row_index to col_index with weight (frequency).")
-    num_pois = raw_X.shape[0]
+    # raw_A = load_graph_adj_mtx(args.data_adj_mtx)
+    # raw_X = load_graph_node_features(args.data_node_feats,
+    #                                  args.feature1,
+    #                                  args.feature2,
+    #                                  args.feature3,
+    #                                  args.feature4)
+    # logging.info(
+    #     f"raw_X.shape: {raw_X.shape}; "
+    #     f"Four features: {args.feature1}, {args.feature2}, {args.feature3}, {args.feature4}.")
+    # logging.info(f"raw_A.shape: {raw_A.shape}; Edge from row_index to col_index with weight (frequency).")
+    # num_pois = raw_X.shape[0]
+    num_pois = len(pois_df)
+    num_cats = len(cats2id_dict)
+    user_nums = len(user2id_dict)
+    node_feature = len(pois_df[0])
 
-    One-hot encoding poi categories
-    logging.info('One-hot encoding poi categories id')
-    one_hot_encoder = OneHotEncoder()
-    cat_list = list(raw_X[:, 1])
-    one_hot_encoder.fit(list(map(lambda x: [x], cat_list)))
-    one_hot_rlt = one_hot_encoder.transform(list(map(lambda x: [x], cat_list))).toarray()
-    num_cats = one_hot_rlt.shape[-1]
-    X = np.zeros((num_pois, raw_X.shape[-1] - 1 + num_cats), dtype=np.float32)
-    X[:, 0] = raw_X[:, 0]
-    X[:, 1:num_cats + 1] = one_hot_rlt
-    X[:, num_cats + 1:] = raw_X[:, 2:]
-    logging.info(f"After one hot encoding poi cat, X.shape: {X.shape}")
-    logging.info(f'POI categories: {list(one_hot_encoder.categories_[0])}')
-    # Save ont-hot encoder
-    with open(os.path.join(args.save_dir, 'one-hot-encoder.pkl'), "wb") as f:
-        pickle.dump(one_hot_encoder, f)
+    # One-hot encoding poi categories
+    # logging.info('One-hot encoding poi categories id')
+    # one_hot_encoder = OneHotEncoder()
+    # cat_list = list(raw_X[:, 1])
+    # one_hot_encoder.fit(list(map(lambda x: [x], cat_list)))
+    # one_hot_rlt = one_hot_encoder.transform(list(map(lambda x: [x], cat_list))).toarray()
+    # num_cats = one_hot_rlt.shape[-1]
+    # X = np.zeros((num_pois, raw_X.shape[-1] - 1 + num_cats), dtype=np.float32)
+    # X[:, 0] = raw_X[:, 0]
+    # X[:, 1:num_cats + 1] = one_hot_rlt
+    # X[:, num_cats + 1:] = raw_X[:, 2:]
+    # logging.info(f"After one hot encoding poi cat, X.shape: {X.shape}")
+    # logging.info(f'POI categories: {list(one_hot_encoder.categories_[0])}')
+    # # Save ont-hot encoder
+    # with open(os.path.join(args.save_dir, 'one-hot-encoder.pkl'), "wb") as f:
+    #     pickle.dump(one_hot_encoder, f)
 
     # Normalization
     print('Laplician matrix...')
-    A = calculate_laplacian_matrix(raw_A, mat_type='hat_rw_normd_lap_mat')
+    # A = calculate_laplacian_matrix(raw_A, mat_type='hat_rw_normd_lap_mat')
     # X POI集合
     # POI id to index
-    nodes_df = pd.read_csv(args.data_node_feats,encoding="ANSI")
+    nodes_df = pd.read_csv(args.data_node_feats, encoding="ANSI")
     poi_ids = list(set(nodes_df['node_name/poi_id'].tolist()))
     poi_id2idx_dict = dict(zip(poi_ids, range(len(poi_ids))))
 
-    pois_df = pd.read_pickle(args.origin_file + "_pois.data")
-    pois2id_dict = pd.read_pickle(args.origin_file +"_pois2id.data")
-
-    cats2id_dict = pd.read_pickle(args.origin_file+"cats2id.data")
-
-    user2id_dict = pd.read_pickle(args.origin_file+"_cats2id")
-
-
-
-
-    # Cat id to index
-    cat_ids = list(set(nodes_df[args.feature2].tolist()))
-    cat_id2idx_dict = dict(zip(cat_ids, range(len(cat_ids))))
-
     # Poi idx to cat idx
     poi_idx2cat_idx_dict = {}
-    for i, row in nodes_df.iterrows():
-        poi_idx2cat_idx_dict[poi_id2idx_dict[row['node_name/poi_id']]] = \
-            cat_id2idx_dict[row[args.feature2]]
-
-    # User id to index
-    user_ids = [str(each) for each in list(set(train_df['user_id'].to_list()))]
-    user_id2idx_dict = dict(zip(user_ids, range(len(user_ids))))
+    for i, row in enumerate(pois_df):
+        poi_idx2cat_idx_dict[row[0]] = row[3]
 
     # Print user-trajectories count
     traj_list = list(set(train_df['trajectory_id'].tolist()))
@@ -139,7 +142,7 @@ def train(args):
             for traj_id in tqdm(set(train_df['trajectory_id'].tolist())):
                 traj_df = train_df[train_df['trajectory_id'] == traj_id]
                 poi_ids = traj_df['POI_id'].to_list()
-                poi_idxs = [poi_id2idx_dict[each] for each in poi_ids]
+                poi_idxs = [pois2id_dict[each] for each in poi_ids if each in pois2id_dict ]
                 time_feature = traj_df[args.time_feature].to_list()
 
                 input_seq = []
@@ -173,7 +176,7 @@ def train(args):
                 user_id = traj_id.split('_')[0]
 
                 # Ignore user if not in training set
-                if user_id not in user_id2idx_dict.keys():
+                if user_id not in user2id_dict.keys():
                     continue
 
                 # Ger POIs idx in this trajectory
@@ -183,8 +186,8 @@ def train(args):
                 time_feature = traj_df[args.time_feature].to_list()
 
                 for each in poi_ids:
-                    if each in poi_id2idx_dict.keys():
-                        poi_idxs.append(poi_id2idx_dict[each])
+                    if each in pois2id_dict.keys():
+                        poi_idxs.append(pois2id_dict[each])
                     else:
                         # Ignore poi if not in training set
                         continue
@@ -229,21 +232,56 @@ def train(args):
 
     # %% ====================== Build Models ======================
     # Model1: POI embedding model
-    if isinstance(X, np.ndarray):
-        X = torch.from_numpy(X)
-        A = torch.from_numpy(A)
-    X = X.to(device=args.device, dtype=torch.float)
-    A = A.to(device=args.device, dtype=torch.float)
+    # if isinstance(X, np.ndarray):
+    #     X = torch.from_numpy(X)
+    #     A = torch.from_numpy(A)
+    # X = X.to(device=args.device, dtype=torch.float)
+    # A = A.to(device=args.device, dtype=torch.float)
 
-    args.gcn_nfeat = X.shape[1]
-    poi_nums= 1
-    user_nums =1
-    cat_nums = 1
-    node_feature = 1
-    model = GETNext(args,poi_nums,user_nums,cat_nums,node_feature)
+    # args.gcn_nfeat = X.shape[1]
+
+    # poi_embed_model = GCN(ninput=args.gcn_nfeat,
+    #                       nhid=args.gcn_nhid,
+    #                       noutput=args.poi_embed_dim,
+    #                       dropout=args.gcn_dropout)
+
+    poi_GAT_model = GAT(num_of_layers=2, num_heads_per_layer=[8,1], num_features_per_layer=[node_feature,8,args.poi_embed_dim])
+
+    # Node Attn Model
+    node_attn_model = NodeAttnMap(in_features=node_feature, nhid=args.node_attn_nhid, use_mask=False)
+
+    # %% Model2: User embedding model, nn.embedding
+    user_embed_model = UserEmbeddings(user_nums, args.user_embed_dim)
+
+    # %% Model3: Time Model
+    time_embed_model = Time2Vec('sin', out_dim=args.time_embed_dim)
+
+    # %% Model4: Category embedding model
+    cat_embed_model = CategoryEmbeddings(num_cats, args.cat_embed_dim)
+
+    # %% Model5: Embedding fusion models
+    embed_fuse_model1 = FuseEmbeddings(args.user_embed_dim, args.poi_embed_dim)
+    embed_fuse_model2 = FuseEmbeddings(args.time_embed_dim, args.cat_embed_dim)
+
+    # %% Model6: Sequence model
+    args.seq_input_embed = args.poi_embed_dim + args.user_embed_dim + args.time_embed_dim + args.cat_embed_dim
+    seq_model = TransformerModel(num_pois,
+                                 num_cats,
+                                 args.seq_input_embed,
+                                 args.transformer_nhead,
+                                 args.transformer_nhid,
+                                 args.transformer_nlayers,
+                                 dropout=args.transformer_dropout)
 
     # Define overall loss and optimizer
-    optimizer = optim.Adam(params=list(GETNext.parameters()),
+    optimizer = optim.Adam(params=list(poi_GAT_model.parameters()) +
+                                  list(node_attn_model.parameters()) +
+                                  list(user_embed_model.parameters()) +
+                                  list(time_embed_model.parameters()) +
+                                  list(cat_embed_model.parameters()) +
+                                  list(embed_fuse_model1.parameters()) +
+                                  list(embed_fuse_model2.parameters()) +
+                                  list(seq_model.parameters()),
                            lr=args.lr,
                            weight_decay=args.weight_decay)
 
@@ -264,7 +302,7 @@ def train(args):
 
         # User to embedding
         user_id = traj_id.split('_')[0]
-        user_idx = user_id2idx_dict[user_id]
+        user_idx = user2id_dict[user_id]
         input = torch.LongTensor([user_idx]).to(device=args.device)
         user_embedding = user_embed_model(input)
         user_embedding = torch.squeeze(user_embedding)
@@ -297,20 +335,27 @@ def train(args):
 
         return input_seq_embed
 
-    def adjust_pred_prob_by_graph(y_pred_poi):
-        y_pred_poi_adjusted = torch.zeros_like(y_pred_poi)
-        attn_map = node_attn_model(X, A)
-
-        for i in range(len(batch_seq_lens)):
-            traj_i_input = batch_input_seqs[i]  # list of input check-in pois
-            for j in range(len(traj_i_input)):
-                y_pred_poi_adjusted[i, j, :] = attn_map[traj_i_input[j], :] + y_pred_poi[i, j, :]
-
-        return y_pred_poi_adjusted
+    # def adjust_pred_prob_by_graph(y_pred_poi):
+    #     y_pred_poi_adjusted = torch.zeros_like(y_pred_poi)
+    #     # attn_map = node_attn_model(X, A)
+    #
+    #     for i in range(len(batch_seq_lens)):
+    #         traj_i_input = batch_input_seqs[i]  # list of input check-in pois
+    #         for j in range(len(traj_i_input)):
+    #             y_pred_poi_adjusted[i, j, :] = attn_map[traj_i_input[j], :] + y_pred_poi[i, j, :]
+    #
+    #     return y_pred_poi_adjusted
 
     # %% ====================== Train ======================
-    model = model.to(device=args.device)
-
+    poi_GAT_model = poi_GAT_model.to(device = args.device)
+    # poi_embed_model = poi_embed_model.to(device=args.device)
+    node_attn_model = node_attn_model.to(device=args.device)
+    user_embed_model = user_embed_model.to(device=args.device)
+    time_embed_model = time_embed_model.to(device=args.device)
+    cat_embed_model = cat_embed_model.to(device=args.device)
+    embed_fuse_model1 = embed_fuse_model1.to(device=args.device)
+    embed_fuse_model2 = embed_fuse_model2.to(device=args.device)
+    seq_model = seq_model.to(device=args.device)
 
     # %% Loop epoch
     # For plotting
@@ -339,7 +384,15 @@ def train(args):
 
     for epoch in range(args.epochs):
         logging.info(f"{'*' * 50}Epoch:{epoch:03d}{'*' * 50}\n")
-        model.train()
+        # poi_embed_model.train()
+        poi_GAT_model.train()
+        node_attn_model.train()
+        user_embed_model.train()
+        time_embed_model.train()
+        cat_embed_model.train()
+        embed_fuse_model1.train()
+        embed_fuse_model2.train()
+        seq_model.train()
 
         train_batches_top1_acc_list = []
         train_batches_top5_acc_list = []
@@ -365,8 +418,10 @@ def train(args):
             batch_seq_labels_time = []
             batch_seq_labels_cat = []
 
-            poi_embeddings = poi_embed_model(X, A)
+            # 通过GCN得到POI_embedding
+            # poi_embeddings = poi_embed_model(X, A)
 
+            poi_embeddings=poi_GAT_model(graph_data)[0]
             # Convert input seq to embeddings
             for sample in batch:
                 # sample[0]: traj_id, sample[1]: input_seq, sample[2]: label_seq
@@ -390,8 +445,8 @@ def train(args):
             # Feedforward
             x = batch_padded.to(device=args.device, dtype=torch.float)
             y_pred_poi, y_pred_time, y_pred_cat = seq_model(x, src_mask)
-            y_pred_poi_adjusted = adjust_pred_prob_by_graph(y_pred_poi)
-
+            # y_pred_poi_adjusted = adjust_pred_prob_by_graph(y_pred_poi)
+            y_pred_poi_adjusted = y_pred_poi
             label_padded_poi = pad_sequence(batch_seq_labels_poi, batch_first=True, padding_value=-1)
             label_padded_time = pad_sequence(batch_seq_labels_time, batch_first=True, padding_value=-1)
             label_padded_cat = pad_sequence(batch_seq_labels_cat, batch_first=True, padding_value=-1)
@@ -399,7 +454,6 @@ def train(args):
             y_poi = label_padded_poi.to(device=args.device, dtype=torch.long)
             y_time = label_padded_time.to(device=args.device, dtype=torch.float)
             y_cat = label_padded_cat.to(device=args.device, dtype=torch.long)
-
 
             # Graph Attention adjusted prob
             loss_poi = criterion_poi(y_pred_poi_adjusted.transpose(1, 2), y_poi)
@@ -479,16 +533,9 @@ def train(args):
         embed_fuse_model1.eval()
         embed_fuse_model2.eval()
         seq_model.eval()
-        val_batches_top1_acc_list = []
-        val_batches_top5_acc_list = []
-        val_batches_top10_acc_list = []
-        val_batches_top20_acc_list = []
-        val_batches_mAP20_list = []
-        val_batches_mrr_list = []
-        val_batches_loss_list = []
-        val_batches_poi_loss_list = []
-        val_batches_time_loss_list = []
-        val_batches_cat_loss_list = []
+        val_batches_top1_acc_list, val_batches_top5_acc_list, val_batches_top10_acc_list, val_batches_top20_acc_list = [], [], [], []
+        val_batches_mAP20_list, val_batches_mrr_list = [], []
+        val_batches_loss_list, val_batches_poi_loss_list, val_batches_time_loss_list, val_batches_cat_loss_list = [], [], [], []
         src_mask = seq_model.generate_square_subsequent_mask(args.batch).to(args.device)
         for vb_idx, batch in enumerate(val_loader):
             if len(batch) != args.batch:
@@ -691,7 +738,7 @@ def train(args):
                 np.save(os.path.join(embeddings_save_dir, 'saved_poi_embeddings'), save_poi_embeddings)
                 # Save user embeddings
                 user_embedding_list = []
-                for user_idx in range(len(user_id2idx_dict)):
+                for user_idx in range(len(user2id_dict)):
                     input = torch.LongTensor([user_idx]).to(device=args.device)
                     user_embedding = user_embed_model(input).detach().cpu().numpy().flatten()
                     user_embedding_list.append(user_embedding)
@@ -699,7 +746,7 @@ def train(args):
                 np.save(os.path.join(embeddings_save_dir, 'saved_user_embeddings'), user_embeddings)
                 # Save cat embeddings
                 cat_embedding_list = []
-                for cat_idx in range(len(cat_id2idx_dict)):
+                for cat_idx in range(len(cats2id_dict)):
                     input = torch.LongTensor([cat_idx]).to(device=args.device)
                     cat_embedding = cat_embed_model(input).detach().cpu().numpy().flatten()
                     cat_embedding_list.append(cat_embedding)
@@ -727,9 +774,9 @@ def train(args):
                 'embed_fuse2_state_dict': embed_fuse_model2.state_dict(),
                 'seq_model_state_dict': seq_model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
-                'user_id2idx_dict': user_id2idx_dict,
+                'user_id2idx_dict': user2id_dict,
                 'poi_id2idx_dict': poi_id2idx_dict,
-                'cat_id2idx_dict': cat_id2idx_dict,
+                'cat_id2idx_dict': cats2id_dict,
                 'poi_idx2cat_idx_dict': poi_idx2cat_idx_dict,
                 'node_attn_map': node_attn_model(X, A),
                 'args': args,
@@ -802,8 +849,8 @@ if __name__ == '__main__':
     args.feature1 = 'checkin_cnt'
     # poi_caiid
     args.feature2 = 'poi_catid'
-    #latitude
+    # latitude
     args.feature3 = 'latitude'
-    #longtitude
+    # longtitude
     args.feature4 = 'longitude'
     train(args)

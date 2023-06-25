@@ -143,6 +143,7 @@ def haversine(x, y):  # 经度1，纬度1，经度2，纬度2 （十进制度数
     r = 6371  # 地球平均半径，单位为公里
     return c * r
 
+#读取含有顺序访问关系的POI邻接数据，并建立K近邻关系的邻接数据
 def build_dist_adj(origin_file,k):
     pois = pd.read_pickle(origin_file + "_pois.data")
     next_adj = pd.read_pickle(origin_file+"_adjNext.data")
@@ -161,7 +162,7 @@ def build_dist_adj(origin_file,k):
                 continue
             else:
                 G.add_edge(i,neighbor)
-    with open(origin_file + "_adj.data", "wb") as f:
+    with open(origin_file + "_adj_K="+k+".data_", "wb") as f:
         pickle.dump(G.edges(), f)
     return G
 

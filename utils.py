@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import torch
 import torch.backends.cudnn as cudnn
 from scipy.sparse.linalg import eigsh
@@ -183,3 +184,9 @@ def generate_square_subsequent_mask(sz):
     mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
     mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
     return mask
+
+def load_graph(origin_file):
+    adj = pd.read_pickle(origin_file+"_adj_K=30.data")
+    node_features = pd.read_pickle(origin_file+"pois.data")
+    node_labels = [item[0] for item in node_features]
+    graph_data = (node_features,adj)
