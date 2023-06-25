@@ -132,7 +132,7 @@ def parameter_parser():
                         help='whether save the embeddings')
     parser.add_argument('--workers',
                         type=int,
-                        default=0,
+                        default=24,
                         help='Num of workers for dataloader.')
     parser.add_argument('--project',
                         default='runs/train',
