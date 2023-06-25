@@ -537,7 +537,7 @@ def train(args):
         val_batches_top1_acc_list, val_batches_top5_acc_list, val_batches_top10_acc_list, val_batches_top20_acc_list = [], [], [], []
         val_batches_mAP20_list, val_batches_mrr_list = [], []
         val_batches_loss_list, val_batches_poi_loss_list, val_batches_time_loss_list, val_batches_cat_loss_list = [], [], [], []
-        src_mask = seq_model.generate_square_subsequent_mask(args.batch).to(args.device)
+        src_mask = generate_square_subsequent_mask(args.batch).to(args.device)
         for vb_idx, batch in enumerate(val_loader):
             if len(batch) != args.batch:
                 src_mask = seq_model.generate_square_subsequent_mask(len(batch)).to(args.device)
