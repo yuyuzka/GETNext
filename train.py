@@ -119,9 +119,9 @@ def train(args):
     # A = calculate_laplacian_matrix(raw_A, mat_type='hat_rw_normd_lap_mat')
     # X POI集合
     # POI id to index
-    nodes_df = pd.read_csv(args.data_node_feats, encoding="ANSI")
-    poi_ids = list(set(nodes_df['node_name/poi_id'].tolist()))
-    poi_id2idx_dict = dict(zip(poi_ids, range(len(poi_ids))))
+    # nodes_df = pd.read_csv(args.data_node_feats, encoding="ANSI")
+    # poi_ids = list(set(nodes_df['node_name/poi_id'].tolist()))
+    # poi_id2idx_dict = dict(zip(poi_ids, range(len(poi_ids))))
 
     # Poi idx to cat idx
     poi_idx2cat_idx_dict = {}
@@ -525,7 +525,8 @@ def train(args):
                              '=' * 100)
 
         # train end --------------------------------------------------------------------------------------------------------
-        poi_embed_model.eval()
+        # poi_embed_model.eval()
+        poi_GAT_model.eval()
         node_attn_model.eval()
         user_embed_model.eval()
         time_embed_model.eval()
@@ -549,7 +550,8 @@ def train(args):
             batch_seq_labels_time = []
             batch_seq_labels_cat = []
 
-            poi_embeddings = poi_embed_model(X, A)
+            # poi_embeddings = poi_embed_model(X, A)
+            poi_embeddings = poi_GAT_model(graph_data)[0]
 
             # Convert input seq to embeddings
             for sample in batch:
@@ -581,8 +583,8 @@ def train(args):
             y_pred_poi, y_pred_time, y_pred_cat = seq_model(x, src_mask)
 
             # Graph Attention adjusted prob
-            y_pred_poi_adjusted = adjust_pred_prob_by_graph(y_pred_poi)
-
+            # y_pred_poi_adjusted = adjust_pred_prob_by_graph(y_pred_poi)
+            y_pred_poi_adjusted = y_pred_poi
             # Calculate loss
             loss_poi = criterion_poi(y_pred_poi_adjusted.transpose(1, 2), y_poi)
             loss_time = criterion_time(torch.squeeze(y_pred_time), y_time)
@@ -729,9 +731,10 @@ def train(args):
             # Save best epoch embeddings
             if monitor_score >= max_val_score:
                 # Save poi embeddings
-                poi_embeddings = poi_embed_model(X, A).detach().cpu().numpy()
+                # poi_embeddings = poi_embed_model(X, A).detach().cpu().numpy()
+                poi_embeddings = poi_GAT_model(graph_data)[0].detach().cpu().numpy()
                 poi_embedding_list = []
-                for poi_idx in range(len(poi_id2idx_dict)):
+                for poi_idx in range(len(pois2id_dict)):
                     poi_embedding = poi_embeddings[poi_idx]
                     poi_embedding_list.append(poi_embedding)
                 save_poi_embeddings = np.array(poi_embedding_list)
@@ -765,7 +768,7 @@ def train(args):
         if args.save_weights:
             state_dict = {
                 'epoch': epoch,
-                'poi_embed_state_dict': poi_embed_model.state_dict(),
+                'poi_GAT_model_state_dict': poi_GAT_model.state_dict(),
                 'node_attn_state_dict': node_attn_model.state_dict(),
                 'user_embed_state_dict': user_embed_model.state_dict(),
                 'time_embed_state_dict': time_embed_model.state_dict(),
@@ -775,10 +778,10 @@ def train(args):
                 'seq_model_state_dict': seq_model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'user_id2idx_dict': user2id_dict,
-                'poi_id2idx_dict': poi_id2idx_dict,
+                'poi_id2idx_dict': pois2id_dict,
                 'cat_id2idx_dict': cats2id_dict,
                 'poi_idx2cat_idx_dict': poi_idx2cat_idx_dict,
-                'node_attn_map': node_attn_model(X, A),
+                # 'node_attn_map': node_attn_model(X, A),
                 'args': args,
                 'epoch_train_metrics': {
                     'epoch_train_loss': epoch_train_loss,
