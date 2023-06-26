@@ -142,7 +142,7 @@ def train(args):
             for traj_id in tqdm(set(train_df['trajectory_id'].tolist())):
                 traj_df = train_df[train_df['trajectory_id'] == traj_id]
                 poi_ids = traj_df['POI_id'].to_list()
-                poi_idxs = [pois2id_dict[each] for each in poi_ids if each in pois2id_dict ]
+                poi_idxs = [pois2id_dict[each] for each in poi_ids]
                 time_feature = traj_df[args.time_feature].to_list()
 
                 input_seq = []
