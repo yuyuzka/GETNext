@@ -73,9 +73,8 @@ def train(args):
     adj = pd.read_pickle(args.origin_file + "_adj_K=30.data")
     node_features = pd.read_pickle(args.origin_file + "_pois.data")
     node_labels = [item[0] for item in node_features]
-    node_features = torch.tensor(node_features,dtype=torch.float,device=args.device)
-    adj = torch.tensor(list(adj),dtype=torch.int64,device=args.device).transpose(0,1)
-
+    node_features = torch.tensor(node_features, dtype=torch.float, device=args.device)
+    adj = torch.tensor(list(adj), dtype=torch.int64, device=args.device).transpose(0, 1)
 
     graph_data = (node_features, adj)
 
@@ -245,7 +244,8 @@ def train(args):
     #                       noutput=args.poi_embed_dim,
     #                       dropout=args.gcn_dropout)
 
-    poi_GAT_model = GAT(num_of_layers=2, num_heads_per_layer=[4,4], num_features_per_layer=[node_feature,128,args.poi_embed_dim])
+    poi_GAT_model = GAT(num_of_layers=2, num_heads_per_layer=[8, 4],
+                        num_features_per_layer=[node_feature, 32, args.poi_embed_dim])
 
     # Node Attn Model
     # node_attn_model = NodeAttnMap(in_features=node_feature, nhid=args.node_attn_nhid, use_mask=False)
@@ -347,7 +347,7 @@ def train(args):
     #     return y_pred_poi_adjusted
 
     # %% ====================== Train ======================
-    poi_GAT_model = poi_GAT_model.to(device = args.device)
+    poi_GAT_model = poi_GAT_model.to(device=args.device)
     # poi_embed_model = poi_embed_model.to(device=args.device)
     # node_attn_model = node_attn_model.to(device=args.device)
     user_embed_model = user_embed_model.to(device=args.device)
@@ -421,7 +421,7 @@ def train(args):
             # 通过GCN得到POI_embedding
             # poi_embeddings = poi_embed_model(X, A)
 
-            poi_embeddings=poi_GAT_model(graph_data)[0]
+            poi_embeddings = poi_GAT_model(graph_data)[0]
             # Convert input seq to embeddings
             for sample in batch:
                 # sample[0]: traj_id, sample[1]: input_seq, sample[2]: label_seq
