@@ -244,8 +244,9 @@ def train(args):
     #                       noutput=args.poi_embed_dim,
     #                       dropout=args.gcn_dropout)
 
-    poi_GAT_model = GAT(num_of_layers=2, num_heads_per_layer=[8, 4],
-                        num_features_per_layer=[node_feature, 32, args.poi_embed_dim])
+    poi_GAT_model = GAT(num_of_layers=2, num_heads_per_layer=[4, 4],
+                        num_features_per_layer=[node_feature, 256, args.poi_embed_dim],
+                        dropout=0.3)
 
     # Node Attn Model
     # node_attn_model = NodeAttnMap(in_features=node_feature, nhid=args.node_attn_nhid, use_mask=False)

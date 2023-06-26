@@ -68,15 +68,15 @@ def parameter_parser():
                         help='List of hidden dims for gcn layers')
     parser.add_argument('--transformer-nhid',
                         type=int,
-                        default=1024,
+                        default=128,
                         help='Hid dim in TransformerEncoder')
     parser.add_argument('--transformer-nlayers',
                         type=int,
-                        default=2,
+                        default=1,
                         help='Num of TransformerEncoderLayer')
     parser.add_argument('--transformer-nhead',
                         type=int,
-                        default=2,
+                        default=1,
                         help='Num of heads in multiheadattention')
     parser.add_argument('--transformer-dropout',
                         type=float,
@@ -110,7 +110,7 @@ def parameter_parser():
                         help='Number of epochs to train.')
     parser.add_argument('--lr',
                         type=float,
-                        default=0.001,
+                        default=5e-3,
                         help='Initial learning rate.')
     parser.add_argument('--lr-scheduler-factor',
                         type=float,
@@ -118,7 +118,7 @@ def parameter_parser():
                         help='Learning rate scheduler factor')
     parser.add_argument('--weight_decay',
                         type=float,
-                        default=5e-4,
+                        default=5e-3,
                         help='Weight decay (L2 loss on parameters).')
 
     # Experiment config
