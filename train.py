@@ -74,9 +74,19 @@ def train(args):
     node_features = pd.read_pickle(args.origin_file + "_pois.data")
     node_labels = [item[0] for item in node_features]
     node_features = torch.tensor(node_features, dtype=torch.float, device=args.device)
+    # 获取后4列数据
+    data_to_normalize = node_features[:, 1:]
+    min_vals = data_to_normalize.min(dim=0)[0]
+    max_vals = data_to_normalize.max(dim=0)[0]
+
+    # 归一化操作
+    normalized_data = (data_to_normalize - min_vals) / (max_vals - min_vals)
+
+    # 将归一化后的数据与第一列数据合并
+    normalized_node_feature = torch.cat((node_features[:, :1], normalized_data), dim=1)
     adj = torch.tensor(list(adj), dtype=torch.int64, device=args.device).transpose(0, 1)
 
-    graph_data = (node_features, adj)
+    graph_data = (normalized_node_feature, adj)
 
     # Build POI graph (built from train_df)
     print('Loading POI graph...')
