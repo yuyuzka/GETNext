@@ -323,7 +323,7 @@ def train(args):
         # POI to embedding and fuse embeddings
         input_seq_embed = []
         for idx in range(len(input_seq)):
-            poi_embedding = poi_embed_model(input_seq[idx])
+            poi_embedding = poi_embed_model(torch.tensor([input_seq[idx]],dtype=torch.long).to(device =args.device))
             poi_embedding = torch.squeeze(poi_embedding).to(device=args.device)
 
             # Time to vector
