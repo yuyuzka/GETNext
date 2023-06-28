@@ -323,7 +323,7 @@ def train(args):
         # POI to embedding and fuse embeddings
         input_seq_embed = []
         for idx in range(len(input_seq)):
-            poi_embedding = poi_embed_model[input_seq[idx]]
+            poi_embedding = poi_embed_model(input_seq[idx])
             poi_embedding = torch.squeeze(poi_embedding).to(device=args.device)
 
             # Time to vector
@@ -748,7 +748,7 @@ def train(args):
                 # poi_embeddings = poi_GAT_model(graph_data)[0].detach().cpu().numpy()
                 poi_embedding_list = []
                 for poi_idx in range(len(pois2id_dict)):
-                    poi_embedding = poi_embed_model[poi_idx].detach().cpu().numpy().flatten()
+                    poi_embedding = poi_embed_model(poi_idx).detach().cpu().numpy().flatten()
                     poi_embedding_list.append(poi_embedding)
                 save_poi_embeddings = np.array(poi_embedding_list)
                 np.save(os.path.join(embeddings_save_dir, 'saved_poi_embeddings'), save_poi_embeddings)
