@@ -255,10 +255,10 @@ def train(args):
     #                       dropout=args.gcn_dropout)
 
     poi_GAT_model = GAT(num_of_layers=2, num_heads_per_layer=[4, 4],
-                        num_features_per_layer=[node_feature, 1024, num_pois],
+                        num_features_per_layer=[node_feature, 1024, 1024],
                         dropout=0.3)
 
-    node_transfer_model = nn.Linear(num_pois, args.poi_embed_dim)
+    node_transfer_model = nn.Linear(256, args.poi_embed_dim)
     # Node Attn Model
     # node_attn_model = NodeAttnMap(in_features=node_feature, nhid=args.node_attn_nhid, use_mask=False)
 
